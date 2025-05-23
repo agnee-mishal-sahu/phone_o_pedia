@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: phoneopedia-service
+  namespace: phoneopedia
+spec:
+  selector:
+    app: phoneopedia-app
+  ports:
+    - port: 80
+      targetPort: 8081
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phoneopedia-deployment
+  namespace: phoneopedia
+  labels:
+    app: phoneopedia-app
+    app.kubernetes.io/component: API
+    spring-boot-version: 2.7.4
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: phoneopedia-app
+  template:
+    metadata:
+      labels:
+        app: phoneopedia-app
+        app.kubernetes.io/component: API
+        spring-boot-version: 2.7.4
+    spec:
+      containers:
+        - name: phoneopedia-app
+          image: fra.ocir.io/entercard/msp/tstenv/curiosity01:phoneopedia-phoneopedia-app
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+
+          envFrom:
+           - configMapRef:
+               name: phoneopedia-configmap
+           - secretRef:
+               name: phoneopedia-secret
+          
+          volumeMounts:
+            # name must match the volume name below
+            - name: kafka-client-cert-secrets
+              mountPath: cert/kafka/
+          
+             
+          livenessProbe:
+            httpGet:
+              path: ///actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 30 #Default 10 number of seconds to wait until the probe is initiated after the container start.
+            periodSeconds: 30 #Default 10 : Defines how often the probe performs the healthcheck, in seconds.
+            timeoutSeconds: 5 #Default 1 : Determines after how much time the probe times out, in seconds
+            successThreshold: 1 #Default 1 : The minimum number of consecutive healthcheck successes before the container is considered healthy after being unhealthy.
+            failureThreshold: 3 #Default 3 :The maximum number of consecutive healthcheck failures before the container is considered unhealthy and being restarted.
+
+          readinessProbe:
+            httpGet:
+              path: ///actuator/health/readiness
+              port: 8081
+            initialDelaySeconds: 30 #Default 0 : The number of seconds to wait until the probe is initiated after the container start.
+            periodSeconds: 30 #Default 10 : Defines how often the probe performs the healthcheck, in seconds.
+            timeoutSeconds: 5 #Default 1 : Determines after how much time the probe times out, in seconds
+            successThreshold: 1 #Default 1 : The minimum number of consecutive healthcheck successes before the container is considered healthy after being unhealthy.
+            failureThreshold: 3 #Default 3 : The maximum number of consecutive healthcheck failures before the container is considered unhealthy and being restarted.
+
+       # The secret data is exposed to Containers in the Pod through a Volume.
+      volumes:
+        - name: kafka-client-cert-secrets
+          secret:
+            secretName: kafka-client-cert-secrets
+      
+
+      imagePullSecrets:
+        - name: ocirsecret

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: phoneopedia-configmap
+  namespace: phoneopedia
+data:
+  database-kube-srv: 10.0.89.7:3306
+  application-kube-srv: developerportal-service.dev-portal-apps.svc.cluster.local
+  psd2onboarding-kube-srv: psd2onboarding-service.onboarding.svc.cluster.local
+  kafka-boot-producer: CUSTOMER_INFO_UPDATE_Q
+  kafka-server: 10.0.82.2:9093
+  kafka-cert-location: cert/kafka/kafka.client.truststore.jks
+  subscriber-keystore-location: cert/kafka/kafka.client.keystore.jks
+  logging-level-root: LOGGING_LEVEL
+  JAVA_ARGS: -Xms512m -Xmx1g
